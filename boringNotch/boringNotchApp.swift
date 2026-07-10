@@ -410,6 +410,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        KeyboardShortcuts.onKeyDown(for: .toggleMeetingRecording) { [weak self] in
+            guard let self = self, Defaults[.enableMeeting] else { return }
+            Task { @MainActor in
+                let manager = MeetingManager.shared
+                if manager.isRecording {
+                    await manager.stopRecording()
+                } else {
+                    // 开始录音时自动切到会议 tab 并打开刘海
+                    self.coordinator.currentView = .meeting
+                    self.vm.open()
+                    await manager.startRecording()
+                }
+            }
+        }
+
         if !Defaults[.showOnAllDisplays] {
             let viewModel = self.vm
             let window = createBoringNotchWindow(

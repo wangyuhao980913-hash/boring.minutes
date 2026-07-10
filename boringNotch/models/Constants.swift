@@ -73,11 +73,12 @@ extension Defaults.Keys {
     static let menubarIcon = Key<Bool>("menubarIcon", default: true)
     static let showOnAllDisplays = Key<Bool>("showOnAllDisplays", default: false)
     static let automaticallySwitchDisplay = Key<Bool>("automaticallySwitchDisplay", default: true)
-    static let releaseName = Key<String>("releaseName", default: "Flying Rabbit 🐇🪽")
+    static let releaseName = Key<String>("releaseName", default: "会议纪要 v1")
     
     // MARK: Behavior
     static let minimumHoverDuration = Key<TimeInterval>("minimumHoverDuration", default: 0.3)
     static let enableHaptics = Key<Bool>("enableHaptics", default: true)
+    static let hapticStrength = Key<HapticStrength>("hapticStrength", default: .light)
     static let openNotchOnHover = Key<Bool>("openNotchOnHover", default: true)
     static let extendHoverArea = Key<Bool>("extendHoverArea", default: false)
     static let notchHeightMode = Key<WindowHeightMode>(
@@ -139,10 +140,10 @@ extension Defaults.Keys {
     )
     
     // MARK: Battery
-    static let showPowerStatusNotifications = Key<Bool>("showPowerStatusNotifications", default: true)
-    static let showBatteryIndicator = Key<Bool>("showBatteryIndicator", default: true)
-    static let showBatteryPercentage = Key<Bool>("showBatteryPercentage", default: true)
-    static let showPowerStatusIcons = Key<Bool>("showPowerStatusIcons", default: true)
+    static let showPowerStatusNotifications = Key<Bool>("showPowerStatusNotifications", default: false)
+    static let showBatteryIndicator = Key<Bool>("showBatteryIndicator", default: false)
+    static let showBatteryPercentage = Key<Bool>("showBatteryPercentage", default: false)
+    static let showPowerStatusIcons = Key<Bool>("showPowerStatusIcons", default: false)
     
     // MARK: Downloads
     static let enableDownloadListener = Key<Bool>("enableDownloadListener", default: true)
@@ -182,6 +183,22 @@ extension Defaults.Keys {
     
     // MARK: Media Controller
     static let mediaController = Key<MediaControllerType>("mediaController", default: defaultMediaController)
+
+    // MARK: Meeting (会议纪要)
+    static let enableMeeting = Key<Bool>("enableMeeting", default: true)
+    static let miaojiAppId = Key<String>("miaojiAppId", default: "")
+    static let miaojiAccessToken = Key<String>("miaojiAccessToken", default: "")
+    static let tosAccessKeyId = Key<String>("tosAccessKeyId", default: "")
+    static let tosSecretAccessKey = Key<String>("tosSecretAccessKey", default: "")
+    static let tosBucketName = Key<String>("tosBucketName", default: "boring-notch-meetings")
+    static let tosRegion = Key<String>("tosRegion", default: "cn-shanghai")
+    static let meetingAudioSource = Key<MeetingAudioSource>("meetingAudioSource", default: .both)
+    static let meetingAutoSummary = Key<Bool>("meetingAutoSummary", default: true)
+    static let meetingLocalSavePath = Key<String>("meetingLocalSavePath", default: "")
+    // 是否已向系统发起过屏幕录制授权请求：首次请求只弹系统标准窗，不再叠加自定义 NSAlert
+    static let hasRequestedScreenRecording = Key<Bool>("hasRequestedScreenRecording", default: false)
+    // 已删除会议的墓碑（存 UUID 字符串），用于跨重启防止云端清单把已删除会议又同步回来
+    static let deletedMeetingIDs = Key<[String]>("deletedMeetingIDs", default: [])
     
     // MARK: Advanced Settings
     static let useCustomAccentColor = Key<Bool>("useCustomAccentColor", default: false)

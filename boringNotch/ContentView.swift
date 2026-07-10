@@ -23,6 +23,7 @@ struct ContentView: View {
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var brightnessManager = BrightnessManager.shared
     @ObservedObject var volumeManager = VolumeManager.shared
+    @ObservedObject var meetingManager = MeetingManager.shared
     @State private var hoverTask: Task<Void, Never>?
     @State private var isHovering: Bool = false
     @State private var anyDropDebounceTask: Task<Void, Never>?
@@ -32,6 +33,8 @@ struct ContentView: View {
     @State private var haptics: Bool = false
 
     @Namespace var albumArtNamespace
+
+    @Default(.hapticStrength) var hapticStrength
 
     @Default(.useMusicVisualizer) var useMusicVisualizer
 
@@ -181,7 +184,7 @@ struct ContentView: View {
                             }
                         }
                     }
-                    .sensoryFeedback(.alignment, trigger: haptics)
+                    .sensoryFeedback(hapticStrength.sensoryFeedback, trigger: haptics)
                     .contextMenu {
                         Button("Settings") {
                             DispatchQueue.main.async {
@@ -257,7 +260,28 @@ struct ContentView: View {
                     .padding(.top, 40)
                     Spacer()
                 } else {
-                    if coordinator.expandingView.type == .battery && coordinator.expandingView.show
+                    if meetingManager.isRecording && vm.notchState == .closed && !vm.hideOnClosed {
+                        HStack(spacing: 0) {
+                            HStack(spacing: 4) {
+                                BreathingRecDot()
+                                Text("REC")
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.red)
+                            }
+
+                            Rectangle()
+                                .fill(.black)
+                                .frame(width: vm.closedNotchSize.width + 10)
+
+                            HStack {
+                                Text(meetingManager.formattedRecordingDuration)
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(.white)
+                            }
+                            .frame(width: 76, alignment: .trailing)
+                        }
+                        .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+                    } else if coordinator.expandingView.type == .battery && coordinator.expandingView.show
                         && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
                     {
                         HStack(spacing: 0) {
@@ -349,6 +373,8 @@ struct ContentView: View {
                         NotchHomeView(albumArtNamespace: albumArtNamespace)
                     case .shelf:
                         ShelfView()
+                    case .meeting:
+                        MeetingNotchView()
                     }
                 }
                 .transition(
@@ -549,7 +575,7 @@ struct ContentView: View {
                         self.isHovering = false
                     }
                     
-                    if self.vm.notchState == .open && !self.vm.isBatteryPopoverActive && !SharingStateManager.shared.preventNotchClose {
+                    if self.vm.notchState == .open && !self.vm.isBatteryPopoverActive && !self.vm.suppressAutoClose && !SharingStateManager.shared.preventNotchClose {
                         self.vm.close()
                     }
                 }
@@ -583,7 +609,7 @@ struct ContentView: View {
     }
 
     private func handleUpGesture(translation: CGFloat, phase: NSEvent.Phase) {
-        guard vm.notchState == .open && !vm.isHoveringCalendar else { return }
+        guard vm.notchState == .open && !vm.isHoveringCalendar && !vm.suppressAutoClose else { return }
 
         withAnimation(animationSpring) {
             gestureProgress = (translation / Defaults[.gestureSensitivity]) * -20
@@ -608,6 +634,22 @@ struct ContentView: View {
                 haptics.toggle()
             }
         }
+    }
+}
+
+// 关闭态录制指示红点：带呼吸感的透明度循环动画
+private struct BreathingRecDot: View {
+    @State private var breathing = false
+
+    var body: some View {
+        Image(systemName: "record.circle")
+            .foregroundStyle(.red)
+            .opacity(breathing ? 0.35 : 1.0)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
+                    breathing = true
+                }
+            }
     }
 }
 

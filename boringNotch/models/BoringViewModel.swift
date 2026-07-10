@@ -31,6 +31,9 @@ class BoringViewModel: NSObject, ObservableObject {
     @Published var edgeAutoOpenActive: Bool = false
     @Published var isHoveringCalendar: Bool = false
     @Published var isBatteryPopoverActive: Bool = false
+    // 会议列表交互（悬停/滚动/重命名弹窗/删除确认/文件导入）期间置为 true，
+    // 用来临时抑制刘海自动收回，避免鼠标移向按钮或滚动列表时刘海误收。
+    @Published var suppressAutoClose: Bool = false
 
     @Published var screenUUID: String?
 
@@ -209,13 +212,8 @@ class BoringViewModel: NSObject, ObservableObject {
         self.coordinator.sneakPeek.show = false
         self.edgeAutoOpenActive = false
 
-        // Set the current view to shelf if it contains files and the user enables openShelfByDefault
-        // Otherwise, if the user has not enabled openLastShelfByDefault, set the view to home
-    if !ShelfStateViewModel.shared.isEmpty && Defaults[.openShelfByDefault] {
-            coordinator.currentView = .shelf
-        } else if !coordinator.openLastTabByDefault {
-            coordinator.currentView = .home
-        }
+        // 记住上次的 tab：关闭刘海时不改变 currentView，
+        // 下次打开刘海回到上次停留的页面（home / shelf / meeting 三者之一）。
     }
 
     func closeHello() {

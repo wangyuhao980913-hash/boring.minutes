@@ -24,6 +24,7 @@ struct WheelPicker: View {
     @State private var scrollPosition: Int?
     @State private var haptics: Bool = false
     @State private var byClick: Bool = false
+    @Default(.hapticStrength) var hapticStrength
     let config: Config
 
     var body: some View {
@@ -61,7 +62,7 @@ struct WheelPicker: View {
         .scrollPosition(id: $scrollPosition, anchor: .center)
         .scrollTargetBehavior(.viewAligned)  // Ensures scroll view snaps the centered view
         .safeAreaPadding(.horizontal)
-        .sensoryFeedback(.alignment, trigger: haptics)
+        .sensoryFeedback(hapticStrength.sensoryFeedback, trigger: haptics)
         .onChange(of: scrollPosition) { oldValue, newValue in
             if !byClick {
                 handleScrollChange(newValue: newValue, config: config)

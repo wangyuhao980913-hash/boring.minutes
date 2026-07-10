@@ -70,7 +70,8 @@ struct BoringHeader: View {
                                     .frame(width: 30, height: 30)
                                     .overlay {
                                         Image(systemName: "gear")
-                                            .foregroundColor(.white)
+                                            // 与 tab 按钮统一的中性灰，避免纯白突兀
+                                            .foregroundColor(.gray)
                                             .padding()
                                             .imageScale(.medium)
                                     }

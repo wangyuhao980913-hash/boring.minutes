@@ -81,7 +81,7 @@ class SettingsWindowController: NSWindowController {
         // Show the window with proper ordering
         window?.orderFrontRegardless()
         window?.makeKeyAndOrderFront(nil)
-        window?.center()
+        positionBelowNotch()
         
         // Activate the app and ensure window gets focus
         NSApp.activate(ignoringOtherApps: true)
@@ -92,6 +92,21 @@ class SettingsWindowController: NSWindowController {
         }
     }
     
+    // 水平居中、窗口顶边与菜单栏下沿留出安全间距，落到展开刘海（约 190pt 高）下方，避免被遮挡
+    private func positionBelowNotch() {
+        guard let window = window else { return }
+        if let vf = NSScreen.main?.visibleFrame {
+            let size = window.frame.size
+            let topGap: CGFloat = 240
+            let x = vf.midX - size.width / 2
+            // 窗口太高时向下 clamp，保证不超出屏幕底部
+            let y = max(vf.minY + 20, vf.maxY - topGap - size.height)
+            window.setFrameOrigin(NSPoint(x: x, y: y))
+        } else {
+            window.center()
+        }
+    }
+
     override func close() {
         super.close()
         relinquishFocus()

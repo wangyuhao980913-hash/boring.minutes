@@ -7,6 +7,7 @@
 
 import Foundation
 import Defaults
+import SwiftUI
 
 public enum Style {
     case notch
@@ -27,6 +28,7 @@ public enum NotchState {
 public enum NotchViews {
     case home
     case shelf
+    case meeting
 }
 
 enum SettingsEnum {
@@ -62,8 +64,30 @@ enum WindowHeightMode: String, Defaults.Serializable {
     case custom = "Custom height"
 }
 
+// 触感反馈强度。macOS 系统触感 API 不支持连续强度，只能在固定模式间切换，
+// 因此这里用两档来近似“普通/更深”的手感。
+enum HapticStrength: String, CaseIterable, Defaults.Serializable {
+    case light = "Light"
+    case deep = "Deep"
+
+    // 映射到 SwiftUI 的系统触感模式：轻=对齐反馈（单次轻点），深=层级变化（更明显的一下）
+    var sensoryFeedback: SensoryFeedback {
+        switch self {
+        case .light: return .alignment
+        case .deep: return .levelChange
+        }
+    }
+}
+
 enum SliderColorEnum: String, CaseIterable, Defaults.Serializable {
     case white = "White"
     case albumArt = "Match album art"
     case accent = "Accent color"
+}
+
+// 会议录音音源（当前采集固定为双路混音，设置项预留以便后续接线）
+enum MeetingAudioSource: String, CaseIterable, Defaults.Serializable {
+    case both = "System + Microphone"
+    case systemOnly = "System only"
+    case micOnly = "Microphone only"
 }
