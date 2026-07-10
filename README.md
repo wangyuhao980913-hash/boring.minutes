@@ -39,8 +39,6 @@
 - **火山引擎 TOS**：Access Key / Secret Key / Bucket / Region
 - **豆包语音妙记**：App ID / Access Token
 
-所有密钥存储在本地 macOS 偏好设置中，不会上传到代码仓库。
-
 ## 致谢
 
 本项目基于 [boring.notch](https://github.com/TheBoredTeam/boring.notch) 开源项目开发，感谢 TheBoredTeam 团队的优秀工作。原项目提供了刘海交互框架、音乐控制、日历集成、文件架等基础功能。
