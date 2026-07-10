@@ -10121,6 +10121,7 @@
       }
     },
     "GitHub" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -12322,6 +12323,7 @@
       }
     },
     "Made with 🫶🏻 by not so boring not.people" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

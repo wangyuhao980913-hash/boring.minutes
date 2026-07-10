@@ -21,8 +21,8 @@
 
 1. 克隆仓库：
    ```bash
-   git clone https://github.com/wangyuhao980913-hash/---.git
-   cd ---
+   git clone https://github.com/wangyuhao980913-hash/boring.minutes.git
+   cd boring.minutes
    ```
 
 2. 用 Xcode 打开项目：
