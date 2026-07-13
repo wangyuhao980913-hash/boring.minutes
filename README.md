@@ -17,6 +17,14 @@
 - macOS 14 Sonoma 或更高版本
 - Apple Silicon 或 Intel Mac
 
+## 安装
+
+1. 从 [Release 页面](https://github.com/wangyuhao980913-hash/boring.minutes/releases) 下载最新的 `BoringMinutes.dmg`
+2. 双击打开 DMG，将 **Boring Minutes** 拖入 Applications 文件夹
+3. 打开终端（启动台搜索"终端"），执行以下命令解除 macOS 安全限制：
+   ```bash
+   xattr -cr /Applications/Boring\ Minutes.app
+
 ## 构建
 
 1. 克隆仓库：
