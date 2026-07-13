@@ -343,6 +343,8 @@ class MeetingManager: ObservableObject {
                     if miaoji.isConfigured {
                         // 妙记要求预签名 URL 至少 24 小时有效
                         if let presignedURL = tos.presignedURL(objectKey: objectKey, expiration: 86_400) {
+                            NSLog("[MeetingManager] 妙记提交 presignedURL=%@", presignedURL.absoluteString)
+                            NSLog("[MeetingManager] 妙记提交 objectKey=%@", objectKey)
                             do {
                                 if let result = try await miaoji.submitAndWait(
                                     audioURL: presignedURL.absoluteString,
@@ -490,6 +492,20 @@ class MeetingManager: ObservableObject {
             if currentMeeting?.id == updated.id { currentMeeting = updated }
             presentInfoAlert(title: "无法总结", message: "找不到可用的录音文件，无法提交妙记。")
             return
+        }
+
+        NSLog("[MeetingManager] 补总结 presignedURL=%@", presignedURL.absoluteString)
+        NSLog("[MeetingManager] 补总结 objectKey=%@", key)
+
+        // 预检：先 HEAD 请求验证 URL 可达
+        do {
+            var headReq = URLRequest(url: presignedURL)
+            headReq.httpMethod = "HEAD"
+            let (_, headResp) = try await URLSession.shared.data(for: headReq)
+            let httpCode = (headResp as? HTTPURLResponse)?.statusCode ?? -1
+            NSLog("[MeetingManager] 预签名 URL HEAD 状态码=%d", httpCode)
+        } catch {
+            NSLog("[MeetingManager] 预签名 URL HEAD 请求失败: %@", error.localizedDescription)
         }
 
         do {
@@ -724,6 +740,13 @@ actor CloudIndexStore {
 
     private let tos = TOSStorageService.shared
 
+    /// 当前用户的存储根前缀。设置了用户名时为 `{user}/meetings/`，否则为 `meetings/`。
+    private var userMeetingsPrefix: String {
+        let user = Defaults[.tosUserPrefix].trimmingCharacters(in: .whitespacesAndNewlines)
+        if user.isEmpty { return "meetings/" }
+        return "\(user)/meetings/"
+    }
+
     /// 写入或更新单条会议的 meta.json。
     func writeMeta(_ meeting: MeetingRecord) async throws {
         let meta = MetaRecord(from: meeting)
@@ -734,26 +757,27 @@ actor CloudIndexStore {
 
     /// 读取单条会议的 meta.json。
     func readMeta(uuid: UUID) async throws -> MetaRecord? {
-        let key = "meetings/\(uuid.uuidString)/meta.json"
+        let key = "\(userMeetingsPrefix)\(uuid.uuidString)/meta.json"
         guard let data = try await tos.downloadData(objectKey: key) else { return nil }
         return try? JSONDecoder().decode(MetaRecord.self, from: data)
     }
 
-    /// 删除整个 `meetings/{uuid}/` 目录（meta + audio + transcript + summary）。
+    /// 删除整个 `{user}/meetings/{uuid}/` 目录（meta + audio + transcript + summary）。
     func removeMeeting(uuid: UUID) async throws {
-        let prefix = "meetings/\(uuid.uuidString)/"
+        let prefix = "\(userMeetingsPrefix)\(uuid.uuidString)/"
         try await tos.deleteAllObjects(withPrefix: prefix)
     }
 
-    /// 通过 ListObjectsV2 发现所有会议目录，逐个读取 meta.json，返回全量元数据。
+    /// 通过 ListObjectsV2 发现当前用户所有会议目录，逐个读取 meta.json，返回全量元数据。
     func listAllMeetings() async throws -> [MeetingRecord] {
-        let prefixes = try await tos.listCommonPrefixes(prefix: "meetings/", delimiter: "/")
+        let basePrefix = userMeetingsPrefix
+        let prefixes = try await tos.listCommonPrefixes(prefix: basePrefix, delimiter: "/")
 
         var records: [MeetingRecord] = []
         for prefix in prefixes {
             let components = prefix.split(separator: "/")
-            guard components.count >= 2,
-                  let uuid = UUID(uuidString: String(components[1]))
+            guard let uuidStr = components.last,
+                  let uuid = UUID(uuidString: String(uuidStr))
             else { continue }
 
             if let meta = try? await readMeta(uuid: uuid) {

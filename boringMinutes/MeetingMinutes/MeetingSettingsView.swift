@@ -20,6 +20,7 @@ struct MeetingSettings: View {
     @Default(.tosSecretAccessKey) private var tosSecretAccessKey
     @Default(.tosBucketName) private var tosBucketName
     @Default(.tosRegion) private var tosRegion
+    @Default(.tosUserPrefix) private var tosUserPrefix
 
     @ObservedObject private var meetingManager = MeetingManager.shared
 
@@ -31,6 +32,7 @@ struct MeetingSettings: View {
     private var credentialsFilled: Bool {
         !miaojiAppId.isEmpty && !miaojiAccessToken.isEmpty
             && !tosAccessKeyId.isEmpty && !tosSecretAccessKey.isEmpty && !tosBucketName.isEmpty
+            && !tosUserPrefix.isEmpty
     }
 
     var body: some View {
@@ -69,6 +71,12 @@ struct MeetingSettings: View {
 
                     // 凭证子项（比开关低一级）
                     Group {
+                        credentialField(title: "用户名（必填，用于隔离存储空间，如：wang）", text: $tosUserPrefix, secure: false)
+                        if tosUserPrefix.isEmpty {
+                            Text("⚠️ 请填写用户名，不同用户名的数据互相隔离，避免冲突。")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
                         credentialField(title: "妙记 App ID", text: $miaojiAppId, secure: false)
                         credentialField(title: "妙记 Access Token", text: $miaojiAccessToken, secure: true)
                         credentialField(title: "TOS Access Key ID", text: $tosAccessKeyId, secure: false)

@@ -195,6 +195,7 @@ extension Defaults.Keys {
     static let meetingAudioSource = Key<MeetingAudioSource>("meetingAudioSource", default: .both)
     static let meetingAutoSummary = Key<Bool>("meetingAutoSummary", default: true)
     static let meetingLocalSavePath = Key<String>("meetingLocalSavePath", default: "")
+    static let tosUserPrefix = Key<String>("tosUserPrefix", default: "")
     // 是否已向系统发起过屏幕录制授权请求：首次请求只弹系统标准窗，不再叠加自定义 NSAlert
     static let hasRequestedScreenRecording = Key<Bool>("hasRequestedScreenRecording", default: false)
     // 已删除会议的墓碑（存 UUID 字符串），用于跨重启防止云端清单把已删除会议又同步回来

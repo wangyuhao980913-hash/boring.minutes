@@ -146,8 +146,14 @@ struct MeetingRecord: Codable, Identifiable {
         return formatter.string(from: startDate)
     }
 
-    /// 云端目录前缀：`meetings/{uuid}/`，新会议的所有对象都存在这个路径下。
-    var tosPrefix: String { "meetings/\(id.uuidString)/" }
+    /// 云端目录前缀。设置了用户名时为 `{user}/meetings/{uuid}/`，否则为 `meetings/{uuid}/`。
+    var tosPrefix: String {
+        let user = Defaults[.tosUserPrefix].trimmingCharacters(in: .whitespacesAndNewlines)
+        if user.isEmpty {
+            return "meetings/\(id.uuidString)/"
+        }
+        return "\(user)/meetings/\(id.uuidString)/"
+    }
 }
 
 // MARK: - 会议状态

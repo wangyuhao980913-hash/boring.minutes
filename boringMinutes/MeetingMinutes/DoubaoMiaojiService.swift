@@ -153,6 +153,8 @@ class DoubaoMiaojiService {
             throw MiaojiError.networkError
         }
 
+        logResponse("妙记 query", httpResponse, data: data)
+
         let apiStatus = httpResponse.value(forHTTPHeaderField: "X-Api-Status-Code") ?? ""
 
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -163,6 +165,9 @@ class DoubaoMiaojiService {
         }
 
         let status = (dataObj["Status"] as? String ?? "").lowercased()
+        let errCode = dataObj["ErrCode"] as? Int ?? 0
+        let errMessage = dataObj["ErrMessage"] as? String ?? ""
+        NSLog("[妙记 query] Status=%@ ErrCode=%d ErrMessage=%@", status, errCode, errMessage)
 
         switch status {
         case "success":
@@ -176,6 +181,7 @@ class DoubaoMiaojiService {
         case "failed":
             let errCode = dataObj["ErrCode"] as? Int ?? 0
             let errMessage = dataObj["ErrMessage"] as? String ?? "任务失败"
+            NSLog("[妙记 query] 任务失败详情: ErrCode=%d ErrMessage=%@", errCode, errMessage)
             return .failed("\(errCode): \(errMessage)")
 
         case "running":
