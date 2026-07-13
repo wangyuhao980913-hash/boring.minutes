@@ -21,23 +21,27 @@
 
 1. 克隆仓库：
    ```bash
-   git clone https://github.com/wangyuhao980913-hash/boring.minutes.git
+   git clone https://github.com/yuhao-wang-git/boring.minutes.git
    cd boring.minutes
    ```
 
 2. 用 Xcode 打开项目：
    ```bash
-   open boringNotch.xcodeproj
+   open boringMinutes.xcodeproj
    ```
 
 3. 点击 Run (Cmd+R) 即可运行。
 
 ## 配置
 
-首次使用需在设置中配置：
+首次使用需在设置中配置火山引擎相关凭证。详细的注册、开通、配置步骤请参阅：
 
-- **火山引擎 TOS**：Access Key / Secret Key / Bucket / Region
-- **豆包语音妙记**：App ID / Access Token
+**👉 [火山引擎接入与使用指南](docs/会议纪要-火山引擎接入与使用指南.md)**
+
+简要来说，需要配置两套凭证：
+
+- **火山引擎 TOS（对象存储）**：Access Key / Secret Key / Bucket / Region
+- **豆包语音妙记（转写+总结）**：App ID / Access Token
 
 ## 致谢
 

@@ -746,13 +746,13 @@ final class AudioMixer {
     static var systemGain: Float = 1.0
     static var micGain: Float = 1.0
 
-    private static let agcWindowSamples = 32000       // 约 2 秒 @16kHz
-    private static let agcSmoothFactor: Float = 0.2
+    private static let agcWindowSamples = 16000       // 约 1 秒 @16kHz，缩短窗口加快响应
+    private static let agcSmoothFactor: Float = 0.15
     private static let gainMin: Float = 0.3
     private static let gainMax: Float = 4.0
-    private static let targetPeak: Float = 16000      // 安全峰值上限，留余量防止两路叠加溢出
-    private static let micRatio: Float = 0.3           // 麦克风目标占比
-    private static let sysRatio: Float = 0.7           // 系统声目标占比
+    private static let targetPeak: Float = 14000      // 安全峰值上限，留更多余量防止两路叠加溢出
+    private static let micRatio: Float = 0.6           // 麦克风目标占比（人声为主）
+    private static let sysRatio: Float = 0.4           // 系统声目标占比
     private static let silenceThreshold: Double = 50   // 低于此 RMS 视为静音，不调增益
 
     private var systemSumSq: Double = 0
@@ -852,18 +852,22 @@ final class AudioMixer {
         systemSumSq = 0; systemSampleCount = 0
         micSumSq = 0; micSampleCount = 0
 
-        // 任一路几乎静音时不调整，防止噪声被无限放大
         guard sysRMS > Self.silenceThreshold, micRMS > Self.silenceThreshold else { return }
 
         // 目标：混合后 micRMS*micGain : sysRMS*sysGain = 6:4
-        // 实现：各自独立缩放到 targetPeak * ratio
         let rawSysGain = min(max(Float(Double(Self.targetPeak) * Double(Self.sysRatio) / sysRMS), Self.gainMin), Self.gainMax)
         let rawMicGain = min(max(Float(Double(Self.targetPeak) * Double(Self.micRatio) / micRMS), Self.gainMin), Self.gainMax)
 
-        let smooth = Self.agcSmoothFactor
         if agcReady {
-            Self.systemGain = Self.systemGain * (1 - smooth) + rawSysGain * smooth
-            Self.micGain = Self.micGain * (1 - smooth) + rawMicGain * smooth
+            // 非对称平滑：增益需要降低时（音量突然变大），快速反应；升高时慢慢恢复
+            let attackSmooth: Float = 0.6   // 快速降增益
+            let releaseSmooth: Float = 0.1  // 慢慢升增益
+
+            let sysFactor = rawSysGain < Self.systemGain ? attackSmooth : releaseSmooth
+            let micFactor = rawMicGain < Self.micGain ? attackSmooth : releaseSmooth
+
+            Self.systemGain = Self.systemGain * (1 - sysFactor) + rawSysGain * sysFactor
+            Self.micGain = Self.micGain * (1 - micFactor) + rawMicGain * micFactor
         } else {
             Self.systemGain = rawSysGain
             Self.micGain = rawMicGain
