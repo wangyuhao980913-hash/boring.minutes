@@ -746,14 +746,15 @@ final class AudioMixer {
     static var systemGain: Float = 1.0
     static var micGain: Float = 1.0
 
-    private static let agcWindowSamples = 16000       // 约 1 秒 @16kHz，缩短窗口加快响应
+    private static let agcWindowSamples = 8000        // 约 0.5 秒 @16kHz，更快响应音量变化
     private static let agcSmoothFactor: Float = 0.15
     private static let gainMin: Float = 0.3
-    private static let gainMax: Float = 4.0
-    private static let targetPeak: Float = 14000      // 安全峰值上限，留更多余量防止两路叠加溢出
-    private static let micRatio: Float = 0.6           // 麦克风目标占比（人声为主）
-    private static let sysRatio: Float = 0.4           // 系统声目标占比
-    private static let silenceThreshold: Double = 50   // 低于此 RMS 视为静音，不调增益
+    private static let gainMax: Float = 8.0            // 允许更大的麦克风增益补偿
+    private static let targetPeak: Float = 14000
+    private static let micRatio: Float = 0.7           // 麦克风目标占比（人声必须压过系统声）
+    private static let sysRatio: Float = 0.3           // 系统声目标占比
+    private static let silenceThreshold: Double = 50
+    private static let micGainFloor: Float = 1.5       // 麦克风增益下限，始终给人声一个基础提升
 
     private var systemSumSq: Double = 0
     private var systemSampleCount: Int = 0
@@ -854,14 +855,25 @@ final class AudioMixer {
 
         guard sysRMS > Self.silenceThreshold, micRMS > Self.silenceThreshold else { return }
 
-        // 目标：混合后 micRMS*micGain : sysRMS*sysGain = 6:4
+        // 目标：混合后 micRMS*micGain : sysRMS*sysGain = 7:3
         let rawSysGain = min(max(Float(Double(Self.targetPeak) * Double(Self.sysRatio) / sysRMS), Self.gainMin), Self.gainMax)
-        let rawMicGain = min(max(Float(Double(Self.targetPeak) * Double(Self.micRatio) / micRMS), Self.gainMin), Self.gainMax)
+        var rawMicGain = min(max(Float(Double(Self.targetPeak) * Double(Self.micRatio) / micRMS), Self.gainMin), Self.gainMax)
+
+        // 麦克风增益不低于 micGainFloor，确保人声始终有基础提升
+        rawMicGain = max(rawMicGain, Self.micGainFloor)
+
+        // 当系统声比麦克风大时，额外压低系统增益（保护人声清晰度）
+        if sysRMS > micRMS * 2 {
+            let suppressFactor = Float(micRMS / sysRMS)
+            let suppressed = rawSysGain * max(suppressFactor, 0.3)
+            if suppressed < rawSysGain {
+                NSLog("[AGC] 系统声过大，额外压低: sysRMS=%.0f micRMS=%.0f sysGain %.2f→%.2f", sysRMS, micRMS, rawSysGain, suppressed)
+            }
+        }
 
         if agcReady {
-            // 非对称平滑：增益需要降低时（音量突然变大），快速反应；升高时慢慢恢复
-            let attackSmooth: Float = 0.6   // 快速降增益
-            let releaseSmooth: Float = 0.1  // 慢慢升增益
+            let attackSmooth: Float = 0.7   // 快速降增益（系统声突然变大时更快反应）
+            let releaseSmooth: Float = 0.08 // 慢慢升增益
 
             let sysFactor = rawSysGain < Self.systemGain ? attackSmooth : releaseSmooth
             let micFactor = rawMicGain < Self.micGain ? attackSmooth : releaseSmooth
@@ -873,6 +885,9 @@ final class AudioMixer {
             Self.micGain = rawMicGain
             agcReady = true
         }
+
+        // 最终保障：麦克风增益绝不低于 floor
+        Self.micGain = max(Self.micGain, Self.micGainFloor)
     }
 
     private static func mixSample(_ system: Int16, _ mic: Int16) -> Int16 {
